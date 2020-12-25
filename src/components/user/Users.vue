@@ -66,6 +66,7 @@
                 type="warning"
                 icon="el-icon-setting"
                 size="mini"
+                @click="showRole(scope.row)"
               ></el-button>
             </el-tooltip>
           </template>
@@ -143,6 +144,32 @@
         <el-button type="primary" @click="editUserInfo()">确 定</el-button>
       </span>
     </el-dialog>
+    <!-- 分配角色 -->
+    <el-dialog
+      title="分配角色"
+      :visible.sync="roleDialogVisible"
+      width="50%"
+      @close="roleDialogClosed"
+    >
+      <p>当前用户：{{ userInfo.username }}</p>
+      <p>当前角色：{{ userInfo.role_name }}</p>
+      <p>
+        修改角色：
+        <el-select v-model="selectById" placeholder="请选择">
+          <el-option
+            v-for="item in roleList"
+            :key="item.id"
+            :label="item.roleName"
+            :value="item.id"
+          >
+          </el-option>
+        </el-select>
+      </p>
+      <span slot="footer" class="dialog-footer">
+        <el-button @click="roleDialogVisible = false">取 消</el-button>
+        <el-button type="primary" @click="allowRole">确 定</el-button>
+      </span>
+    </el-dialog>
   </div>
 </template>
 
@@ -207,11 +234,27 @@ export default {
           { required: true, message: '请输入手机', trigger: 'blur' },
           { validator: checkMobile, trigger: 'blur' }
         ]
-      }
+      },
+      roleDialogVisible: false,
+      roleList: [],
+      userInfo: {},
+      selectById: ''
     }
   },
   created() {
     this.getUserList()
+  },
+  watch: {
+    total() {
+      if (
+        this.total === (this.queryInfo.pagenum - 1) * this.queryInfo.pagesize &&
+        this.total !== 0
+      ) {
+        this.queryInfo.pagenum -= 1
+        console.log(this.queryInfo.pagenum)
+        this.getUserList()
+      }
+    }
   },
   methods: {
     async getUserList() {
@@ -292,7 +335,7 @@ export default {
           cancelButtonText: '取消',
           type: 'warning'
         }
-      ).catch(err => err)
+      ).catch((err) => err)
       if (confirmRes !== 'confirm') {
         return this.$message.info('已取消删除')
       }
@@ -302,20 +345,36 @@ export default {
       }
       this.$message.success(res.meta.msg)
       this.getUserList()
+    },
+    async showRole(userInfo) {
+      this.userInfo = userInfo
+      const { data: res } = await this.$http.get('roles')
+      if (res.meta.status !== 200) {
+        return this.$message.error('获取角色列表失败')
+      }
+      this.roleList = res.data
+      this.roleDialogVisible = true
+    },
+    async allowRole() {
+      const { data: res } = await this.$http.put(
+        `users/${this.userInfo.id}/role`,
+        {
+          rid: this.selectById
+        }
+      )
+      if (res.meta.status !== 200) {
+        return this.$message.error('更新角色失败')
+      }
+      this.$message.success('更新角色成功')
+      this.getUserList()
+      this.roleDialogVisible = false
+    },
+    roleDialogClosed() {
+      this.selectById = ''
     }
   }
 }
 </script>
 
 <style lang="less" scoped>
-.el-breadcrumb {
-  margin-bottom: 15px;
-  font-size: 12px;
-}
-.el-card {
-  box-shadow: 0 1px 1px rgba(0, 0, 0, 0.15) !important;
-  .el-table {
-    margin-top: 15px;
-  }
-}
 </style>
