@@ -67,15 +67,6 @@
       >
       </el-pagination>
     </el-card>
-
-    <!-- 修改商品 -->
-    <el-dialog title="修改商品" :visible.sync="editVisible" width="50%">
-      <quill-editor v-model="getForm.goods_introduce"> </quill-editor>
-      <span slot="footer" class="dialog-footer">
-        <el-button @click="editVisible = false">取 消</el-button>
-        <el-button type="primary" @click="editVisible = false">确 定</el-button>
-      </span>
-    </el-dialog>
   </div>
 </template>
 
@@ -89,9 +80,7 @@ export default {
         pagesize: 10
       },
       goodsList: [],
-      total: 0,
-      getForm: {},
-      editVisible: false
+      total: 0
     }
   },
   created() {
@@ -151,12 +140,7 @@ export default {
       this.$router.push('/goods/add')
     },
     async editById(id) {
-      const { data: res } = await this.$http.get('goods/' + id)
-      if (res.meta.status !== 200) {
-        return this.$message.error('查询商品失败')
-      }
-      this.getForm = res.data
-      this.editVisible = true
+      this.$router.push('/goods/edit/' + id)
     }
   }
 }
